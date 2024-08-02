@@ -12,6 +12,10 @@ from dotenv import load_dotenv
 # 시간 정보를 위한 패키지 추가
 from datetime import datetime
 
+# 음원 파일 재생을 위한 패키지 추가
+import base64
+
+
 # .env 파일 경로 지정 
 load_dotenv()
 
@@ -46,6 +50,29 @@ def ask_gpt(prompt, model):
         messages=prompt
     )
     return response.choices[0].message.content
+
+def TTS(text):
+    filename = "output.mp3"
+    response = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=text
+    )
+    response.stream_to_file(filename)
+
+    # 음원 파일 자동 재생생
+    with open(filename, "rb") as f:
+        data = f.read()
+        b64 = base64.b64encode(data).decode()
+        md = f"""
+            <audio autoplay="True">
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+            """
+        st.markdown(md, unsafe_allow_html=True)
+
+    # 파일 삭제
+    os.remove(filename)
 
 ##### 메인 함수 #####
 def main():
@@ -147,6 +174,9 @@ def main():
                     st.write(f'<div style="display:flex;align-items:center;justify-content:flex-end;"><div style="background-color:lightgray;border-radius:12px;padding:8px 12px;margin-left:8px;">{message}</div><div style="font-size:0.8rem;color:gray;">{time}</div></div>', 
                              unsafe_allow_html=True)
                     st.write("")
+                    
+            # TTS 를 활용하여 음성 파일 생성 및 재생
+            TTS(response)
                     
         else:
             st.session_state["check_reset"] = False
