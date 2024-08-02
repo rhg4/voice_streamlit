@@ -63,9 +63,12 @@ def TTS(text):
         voice="alloy",
         input=text
     )
-    response.stream_to_file(filename)
 
-    # 음원 파일 자동 재생생
+    # 음원 파일 저장
+    with open(filename, "wb") as f:
+        f.write(response.content)
+
+    # 음원 파일 자동 재생
     with open(filename, "rb") as f:
         data = f.read()
         b64 = base64.b64encode(data).decode()
@@ -157,11 +160,18 @@ def main():
             # GPT 모델에 넣을 프롬프트를 위해 질문 내용 저장
             st.session_state["messages"] = st.session_state["messages"] + [{"role": "user", "content": question}]
 
+        # 텍스트 입력 추가
+        text_input = st.text_input("텍스트로 질문하기")
+        if text_input:
+            now = datetime.now().strftime("%H:%M")
+            st.session_state["chat"] = st.session_state["chat"] + [("user", now, text_input)]
+            st.session_state["messages"] = st.session_state["messages"] + [{"role": "user", "content": text_input}]
+
     with col2:
         # 오른쪽 영역 작성
         st.subheader("질문/답변")
 
-        if  (audio.duration_seconds > 0)  and (st.session_state["check_reset"]==False):
+        if  (audio.duration_seconds > 0 or text_input) and (st.session_state["check_reset"]==False):
             # ChatGPT에게 답변 얻기
             response = ask_gpt(st.session_state["messages"], model)
 
@@ -179,7 +189,7 @@ def main():
                              unsafe_allow_html=True)
                     st.write("")
                 else:
-                    st.write(f'<div style="display:flex;align-items:center;justify-content:flex-end;"><div style="background-color:lightgray;border-radius:12px;padding:8px 12px;margin-left:8px;">{message}</div><div style="font-size:0.8rem;color:gray;">{time}</div></div>', 
+                    st.write(f'<div style="display:flex;align-items:center;justify-content:flex-end;"><div style="background-color:pink;border-radius:12px;padding:8px 12px;margin-left:8px;">{message}</div><div style="font-size:0.8rem;color:gray;">{time}</div></div>', 
                              unsafe_allow_html=True)
                     st.write("")
                     
